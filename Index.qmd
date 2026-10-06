@@ -1,0 +1,35 @@
+---
+title: "Data Viz Assignment"
+format: html
+editor: visual
+---
+
+READ ME --\> Remove ggplot grid, define y axis \## Story
+
+Worldwide box office revenues were identified through https://www.boxofficemojo.com/year/world/.
+
+Adjustments for inflation were made by referencing cumulative inflation figures from https://www.officialdata.org/us/inflation/.
+
+I then used the Wayback Machine (https://web.archive.org/) to identify the Rotten Tomatoes critic and all-audience scores within the first 90 days of each movie's initial theatrical release.
+
+I then identified whether movies were sequels or based on existing, well-known intellectual property at the time of theatrical release.
+
+## Version A: Scientific
+
+```{r, math}
+1 + 1
+```
+
+You can add options to executable code like this
+
+```{r, more math}
+2+2
+```
+
+The `echo: false` option disables the printing of code (only output is displayed).
+
+## Version B: Accessible
+
+```{r, graph1accessible}
+Graph_1_Accessible
+```
