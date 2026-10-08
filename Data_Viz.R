@@ -155,15 +155,9 @@ critic_by_audience_correlation <- cor.test(Top_Movies$`90-Day Rotten Tomatoes au
 
 ## Accessible --> Patched scatter plots
 Graph_2_Accessible_Audience <- ggplot(data = Top_Movies, aes(x = `90-Day Rotten Tomatoes audience score`, y = `Inflation-Adjusted Box Office`)) +
-  geom_point_interactive(aes(tooltip = `Movie Title`, data_id = `Movie Title`), na.rm = TRUE, colour = "orangered3") +
-  geom_smooth(method = "lm",
-              se = FALSE,
-              fullrange = TRUE,
-              linewidth = 1.2,
-              na.rm = TRUE,
-              colour = "orangered3") +
+  geom_point_interactive(aes(tooltip = `Movie Title`, data_id = `Movie Title`), na.rm = TRUE, colour = "orangered3", size = 3) +
   scale_x_continuous(limits = c(18, 100),
-                     breaks = seq(20, 100, 20)) +
+      breaks = seq(20, 100, 20)) +
   scale_y_continuous(labels = label_dollar(
     scale_cut = cut_short_scale())) +
   labs(x = "Audience Rating (%)",
@@ -177,36 +171,54 @@ Graph_2_Accessible_Audience <- ggplot(data = Top_Movies, aes(x = `90-Day Rotten 
         panel.grid.major.y = element_line(colour = "black"),
         axis.line = element_line(color = "black", linewidth = 0.5))
 
+Graph_2_Accessible_Audience <- Graph_2_Accessible_Audience +
+  geom_smooth_interactive(method = "lm",
+                          se = FALSE,
+                          fullrange = TRUE,
+                          linewidth = 1.2,
+                          na.rm = TRUE,
+                          colour = "orangered3")
+
 Graph_2_Accessible_Critic <- ggplot(data = Top_Movies, aes(x = `90-Day Rotten Tomatoes critic score`, y = `Inflation-Adjusted Box Office`)) +
-  geom_point_interactive(aes(tooltip = `Movie Title`, data_id = `Movie Title`), na.rm = TRUE, colour = "orangered3") +
-  geom_smooth(method = "lm",
-              se = FALSE,
-              fullrange = TRUE,
-              linewidth = 1.2,
-              na.rm = TRUE,
-              colour = "orangered3") +
+  geom_point_interactive(aes(tooltip = `Movie Title`, data_id = `Movie Title`), na.rm = TRUE, colour = "orangered3", size = 3) +
   scale_x_continuous(limits = c(18, 100),
-                     breaks = seq(20, 100, 20)) +
+       breaks = seq(20, 100, 20)) +
   scale_y_continuous(labels = label_dollar(
-    scale_cut = cut_short_scale())) +
+       scale_cut = cut_short_scale())) +
   labs(x = "Critic Rating (%)",
        y = "Box Office Revenue (USD)") +
   theme_classic() +
   theme(text = element_text(colour = "black"),
-        plot.background = element_rect(fill = "lemonchiffon3"),
-        panel.background = element_rect(fill = "lemonchiffon3"),
-        panel.grid.major.x = element_blank(),
-        panel.grid.minor = element_blank(),
-        panel.grid.major.y = element_line(colour = "black"),
-        axis.line = element_line(color = "black", linewidth = 0.5)) 
+       plot.background = element_rect(fill = "lemonchiffon3"),
+       panel.background = element_rect(fill = "lemonchiffon3"),
+       panel.grid.major.x = element_blank(),
+       panel.grid.minor = element_blank(),
+       panel.grid.major.y = element_line(colour = "black"),
+       axis.line = element_line(color = "black", linewidth = 0.5)) 
 
+Graph_2_Accessible_Critic <- Graph_2_Accessible_Critic +
+  geom_smooth_interactive(method = "lm",
+                          se = FALSE,
+                          fullrange = TRUE,
+                          linewidth = 1.2,
+                          na.rm = TRUE,
+                          colour = "orangered3")
 girafe(
-  ggobj = Graph_2_Scientific,
+  ggobj = Graph_2_Accessible_Audience,
   options = list(
-    opts_hover(css = "fill:red;stroke:black;cursor:pointer;"), # Changes point color to red on hover
-    opts_tooltip(css = "background-color:black;color:white;padding:5px;border-radius:3px;") # Styles tooltip text box
+    opts_hover(css = "fill:black;stroke:black;cursor:pointer;"),
+    opts_tooltip(css = "background-color:white;color:black;padding:5px;border-radius:3px;")
   )
 )
+
+girafe(
+  ggobj = Graph_2_Accessible_Critic,
+  options = list(
+    opts_hover(css = "fill:black;stroke:black;cursor:pointer;"),
+    opts_tooltip(css = "background-color:white;color:black;padding:5px;border-radius:3px;")
+  )
+)
+
 
 Graph_2_Accessible <- Graph_2_Accessible_Audience + Graph_2_Accessible_Critic + 
   plot_annotation(title = "Better Ratings Don't Guarantee Higher Profits")
@@ -216,8 +228,3 @@ Graph_2_Accessible <- Graph_2_Accessible_Audience + Graph_2_Accessible_Critic +
   ## Accessible --> Double bar graph
 
 
-
-
-## Graph 4: Revenue (Y) by Well-known IP (X)
-  ## Scientific --> Box plot with jittered points
-  ## Accessible --> Bar chart with points
