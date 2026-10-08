@@ -8,9 +8,19 @@ library(janitor)
 library(ggplot2)
 library(scales)
 library(patchwork)
+library(gganimate)
+library(gifski)
+library(readr)
+library(ggiraph)
+library(ggExtra)
 
 Top_Movies <- Data_Viz_Assignment_Dataset |> 
-  select(Year:Genre)
+  select(Year:Genre) |> 
+  filter(Year != "NA") |> 
+  mutate(Year = as.numeric(Year)) |> 
+  mutate(`90-Day Rotten Tomatoes critic score` = `90-Day Rotten Tomatoes critic score`*100) |> 
+  mutate(`90-Day Rotten Tomatoes audience score` = `90-Day Rotten Tomatoes audience score`*100)
+
 COVID_Removed_List <- Top_Movies |> 
   filter(Year != "2020", Year != "2021")
 
@@ -26,34 +36,61 @@ Graph_1_Scientific <- ggplot(data = Top_Movies, aes(x = Year, y = `Inflation-Adj
   theme((text = "black"),
     panel.grid.major = element_blank(),
     panel.grid.minor = element_blank(),
-    axis.line = element_line(color = "black", linewidth = 0.5))
+    axis.line = element_line(color = "black", linewidth = 0.5)) +
+annotate("label",
+    x = 2006,
+    y = 2500000000,
+    label = "r = -.03
+Not including pandemic years, r = .06",
+    fill = "white",
+    colour = "black",
+    label.size = 0,
+    size = 4,
+    hjust = 0) 
 
 year_by_revenue_correlation <- cor.test(Top_Movies$Year, Top_Movies$`Inflation-Adjusted Box Office`, method = "pearson")
 
 COVID_removed_year_by_revenue_correlation <- cor.test(COVID_Removed_List$Year, COVID_Removed_List$`Inflation-Adjusted Box Office`, method = "pearson")
 
-  ## Accessible --> Bar graph
+  ## Accessible --> Line graph
 Graph_1_Accessible <- ggplot(data = Top_Movies, aes(x = Year, y = `Inflation-Adjusted Box Office`))+
-  stat_summary(fun = mean,
+  stat_summary(aes(group = 1),
+    fun = mean,
     geom = "line",
-    aes(group = 1),
-    colour = "red",
+    colour = "red3",
     linewidth = 1.2) +
-  stat_summary(fun = mean,
+  stat_summary(aes(group = 1),
+    fun = mean,
     geom = "point",
-    colour = "red",
-    fill = "red",
+    colour = "orangered4",
+    fill = "orangered3",
     shape = 21,
     size = 3) +
+  annotate("segment",
+    x = 2016,
+    y = 750000000,
+    xend = 2019.7,
+    yend = 540000000,
+    colour = "orangered3",
+    linewidth = 0.8,
+    arrow = arrow(length = unit(0.15, "inches"))) +
+  annotate("label",
+    x = 2016,
+    y = 750000000,
+    label = "COVID-19 pandemic",
+    fill = "lemonchiffon2",
+    colour = "black",
+    label.size = 0,
+    size = 4) +
   labs(title = "How Much Do the Biggest Movies Really Make?",
-    subtitle = "Average worldwide box office of each year's five biggest films, adjusted for inflation",
+    subtitle = "Average worldwide box office for the five biggest films of 2006-2025, adjusted for inflation",
     x = "Year",
     y = "Average worldwide box office (USD)") +
   scale_y_continuous(labels = label_dollar(scale_cut = cut_short_scale())) +
   scale_x_continuous(breaks = seq(2006, 2025, 2)) +
   theme_classic() +
-  theme(plot.background = element_rect(fill = "white"),
-    panel.background = element_rect(fill = "white"),
+  theme(plot.background = element_rect(fill = "lemonchiffon3"),
+    panel.background = element_rect(fill = "lemonchiffon3"),
     text = element_text(colour = "black"),
     panel.grid.minor = element_blank(),
     panel.grid.major.x = element_blank(),
@@ -62,14 +99,119 @@ Graph_1_Accessible <- ggplot(data = Top_Movies, aes(x = Year, y = `Inflation-Adj
     axis.title = element_text(colour = "black"),
     plot.title = element_text(size = 18, face = "bold"))
 
+  animated_plot <- Graph_1_Accessible + 
+  transition_reveal(Year)
+
+animate(animated_plot, renderer = gifski_renderer())
+
+
 ## Graph 2: Revenue (Y) by Critic and Audience Ratings (X) --> Although both critic and audience ratings are related to box office revenue, these ratings aren't very good at explaining box office turnout. Instead, we need to look at the factors that put butts into seats in the first place.
-  ## Scientific --> Two-panel scatter plot
-  ## Accessible --> Double line graph
+  ## Scientific --> Scatter plot disaggregated by rating type
+Ratings_Revenue <- Top_Movies |>
+pivot_longer(cols = c(`90-Day Rotten Tomatoes audience score`, `90-Day Rotten Tomatoes critic score`),
+  names_to = "Rating Type",
+  values_to = "Rating") |> 
+  mutate(Rating = Rating*100)
 
+Graph_2_Scientific <- ggplot(data = Ratings_Revenue, aes(x = Rating, y = `Inflation-Adjusted Box Office`, colour = `Rating Type`)) +
+  geom_point(na.rm = TRUE) +
+  geom_smooth(method = "lm",
+  se = FALSE,
+  fullrange = TRUE,
+  linewidth = 1.2,
+  na.rm = TRUE) +
+labs(title = "Associations Between Critic/Audience Ratings and Box Office Revenue",
+  x = "Rating (%)",
+  y = "Box Office Revenue (USD)") +
+scale_x_continuous(limits = c(18, 100),
+  breaks = seq(20, 100, 20)) +
+scale_y_continuous(labels = label_dollar(
+  scale_cut = cut_short_scale())) +
+scale_colour_grey(start = 0.2, end = 0.7) +
+theme_minimal() +
+  theme(legend.position = "bottom") +
+  theme(text = element_text(colour = "black"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.line = element_line(color = "black", linewidth = 0.5))+
+annotate("label",
+  x = 20,
+  y = 2500000000,
+  label = "Critic r = .21
+Audience r = .12 ",
+  fill = "white",
+  colour = "black",
+  label.size = 0,
+  size = 4,
+  hjust = 0) 
 
+ggMarginal(Graph_2_Scientific)
+  
+rating_by_revenue_correlation <- cor.test(Top_Movies$`90-Day Rotten Tomatoes critic score`, Top_Movies$`Inflation-Adjusted Box Office`, method = "pearson")
 
+rating_by_audience_correlation <- cor.test(Top_Movies$`90-Day Rotten Tomatoes audience score`, Top_Movies$`Inflation-Adjusted Box Office`, method = "pearson")
 
-## Graph 3: Critic and Audience Ratings (Y) by Genre (X)
+critic_by_audience_correlation <- cor.test(Top_Movies$`90-Day Rotten Tomatoes audience score`, Top_Movies$`90-Day Rotten Tomatoes critic score`, method = "pearson")
+
+## Accessible --> Patched scatter plots
+Graph_2_Accessible_Audience <- ggplot(data = Top_Movies, aes(x = `90-Day Rotten Tomatoes audience score`, y = `Inflation-Adjusted Box Office`)) +
+  geom_point_interactive(aes(tooltip = `Movie Title`, data_id = `Movie Title`), na.rm = TRUE, colour = "orangered3") +
+  geom_smooth(method = "lm",
+              se = FALSE,
+              fullrange = TRUE,
+              linewidth = 1.2,
+              na.rm = TRUE,
+              colour = "orangered3") +
+  scale_x_continuous(limits = c(18, 100),
+                     breaks = seq(20, 100, 20)) +
+  scale_y_continuous(labels = label_dollar(
+    scale_cut = cut_short_scale())) +
+  labs(x = "Audience Rating (%)",
+       y = "Box Office Revenue (USD)") +
+  theme_classic() +
+  theme(text = element_text(colour = "black"),
+        plot.background = element_rect(fill = "lemonchiffon3"),
+        panel.background = element_rect(fill = "lemonchiffon3"),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.grid.major.y = element_line(colour = "black"),
+        axis.line = element_line(color = "black", linewidth = 0.5))
+
+Graph_2_Accessible_Critic <- ggplot(data = Top_Movies, aes(x = `90-Day Rotten Tomatoes critic score`, y = `Inflation-Adjusted Box Office`)) +
+  geom_point_interactive(aes(tooltip = `Movie Title`, data_id = `Movie Title`), na.rm = TRUE, colour = "orangered3") +
+  geom_smooth(method = "lm",
+              se = FALSE,
+              fullrange = TRUE,
+              linewidth = 1.2,
+              na.rm = TRUE,
+              colour = "orangered3") +
+  scale_x_continuous(limits = c(18, 100),
+                     breaks = seq(20, 100, 20)) +
+  scale_y_continuous(labels = label_dollar(
+    scale_cut = cut_short_scale())) +
+  labs(x = "Critic Rating (%)",
+       y = "Box Office Revenue (USD)") +
+  theme_classic() +
+  theme(text = element_text(colour = "black"),
+        plot.background = element_rect(fill = "lemonchiffon3"),
+        panel.background = element_rect(fill = "lemonchiffon3"),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.grid.major.y = element_line(colour = "black"),
+        axis.line = element_line(color = "black", linewidth = 0.5)) 
+
+girafe(
+  ggobj = Graph_2_Scientific,
+  options = list(
+    opts_hover(css = "fill:red;stroke:black;cursor:pointer;"), # Changes point color to red on hover
+    opts_tooltip(css = "background-color:black;color:white;padding:5px;border-radius:3px;") # Styles tooltip text box
+  )
+)
+
+Graph_2_Accessible <- Graph_2_Accessible_Audience + Graph_2_Accessible_Critic + 
+  plot_annotation(title = "Better Ratings Don't Guarantee Higher Profits")
+
+  ## Graph 3: Critic and Audience Ratings (Y) by Genre (X)
   ## Scientific --> Dumbbell plot
   ## Accessible --> Double bar graph
 
