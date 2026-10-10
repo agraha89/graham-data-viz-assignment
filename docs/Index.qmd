@@ -1,5 +1,5 @@
 ---
-title: "Data Viz Assignment"
+title: "PSY9041: Data Visualization Assignment"
 author: "Alana Graham"
 date: "October 9 2026"
 format:
@@ -16,17 +16,9 @@ execute:
 
 ## Story
 
-(<https://www.reuters.com/business/media-telecom/us-box-office-is-booming-fewer-people-are-going-movies-2026-08-05/>)
+  Every year, a handful of films dominate the global box office, but what explains their success and how has the performance of blockbuster movies changed? Over the past two decades, the biggest films have competed for audiences in a changing commercial landscape, with reports circulating that box office turnout has failed to recover since the COVID-19 pandemic (<https://tinyurl.com/2ntfu9bj>). With billions of dollars at stake, understanding the patterns behind the film industry's biggest hits is an important question for filmmakers, studios, and audiences alike. Beyond the broader factors potentially driving this sustained low turnout (e.g., economic hardships, at-home streaming services), the current investigation sought to uncover (1) the different ways the film industry defines success, (2) whether the highest-earning films of each year are also implicated in industry-wide trending declines, and (3) what industry-specific factors might influence the success of a film across various metrics.
 
-Worldwide box office revenues were identified through <https://www.boxofficemojo.com/year/world/>.
-
-Adjustments for inflation were made by referencing cumulative inflation figures from <https://www.officialdata.org/us/inflation/>.
-
-I then used the Wayback Machine (<https://web.archive.org/>) to identify the Rotten Tomatoes critic and all-audience scores within the first 90 days of each movie's initial theatrical release.
-
-I then identified whether movies were sequels or based on existing, well-known intellectual property at the time of theatrical release.
-
-## Version A: Scientific
+  The descriptive trends suggested that movie success is highly variable, depending on the metric(s) used. Despite concerns about a broader decline in box-office attendance, inflation-adjusted worldwide revenue among the five highest-grossing films of each year remained relatively consistent outside of the pandemic period. In contrast, both critic and audience ratings have steadily increased among these top-earners, with audiences offering consistently higher ratings than critics, particularly since 2020. Moreover, although critic and audience ratings are somewhat related to box office revenue, characteristics like genre may offer more meaningful insights, depending on the metric used to quantify a film's success.
 
 ```{r, setup}
 library(tidyverse)
@@ -54,7 +46,7 @@ Top_Movies <- Data_Viz_Assignment_Dataset |>
   mutate(`90-Day Rotten Tomatoes audience score` = `90-Day Rotten Tomatoes audience score`*100)
   
 COVID_Removed_List <- Top_Movies |> 
-  filter(Year != "2020", Year != "2021")
+  filter(!Year %in% c(2020, 2021))
 
 ## Graph 1: Revenue and Ratings (Y) by Year (X)
   ## Scientific --> Scatter plot
@@ -75,12 +67,13 @@ year_by_revenue_correlation <- cor.test(Top_Movies$Year, Top_Movies$`Inflation-A
 COVID_removed_year_by_revenue_correlation <- cor.test(COVID_Removed_List$Year, COVID_Removed_List$`Inflation-Adjusted Box Office`, method = "pearson")
 
 Year_Ratings <- Top_Movies |>
-  pivot_longer(cols = c(`90-Day Rotten Tomatoes audience score`, `90-Day Rotten Tomatoes critic score`),
-               names_to = "Rating Type",
-               values_to = "Rating")
+  pivot_longer(cols = c(`90-Day Rotten Tomatoes audience score`, 
+                        `90-Day Rotten Tomatoes critic score`),
+      names_to = "Rating Type",
+      values_to = "Rating")
 
 Graph_1_Scientific_Rating <- ggplot(data = Year_Ratings, aes(x = Year, y = Rating, colour = `Rating Type`)) +
-  geom_point(na.rm = TRUE) +
+  geom_jitter(na.rm = TRUE) +
   geom_smooth(method = "lm",
               se = FALSE,
               fullrange = TRUE,
@@ -111,6 +104,9 @@ Audience r = .48 ",
            size = 4,
            hjust = 0) 
 
+year_by_audience_correlation <- cor.test(Top_Movies$Year, Top_Movies$`90-Day Rotten Tomatoes audience score`, method = "pearson")
+
+year_by_critic_correlation <- cor.test(Top_Movies$Year, Top_Movies$`90-Day Rotten Tomatoes critic score`, method = "pearson")
 
 ## Accessible
 Graph_1_Accessible <- ggplot(data = Top_Movies, aes(x = Year, y = `Inflation-Adjusted Box Office`))+
@@ -199,8 +195,9 @@ animated_plot_Graph_1_Ratings <- Graph_1_Accessible_Rating +
   
   ## Graph 2: Revenue (Y) by Critic and Audience Ratings (X)
   ## Scientific --> Scatter plot disaggregated by rating type
-Ratings_Revenue <- Top_Movies |>
-pivot_longer(cols = c(`90-Day Rotten Tomatoes audience score`, `90-Day Rotten Tomatoes critic score`),
+Ratings_Revenue <- COVID_Removed_List |>
+  pivot_longer(cols = c(`90-Day Rotten Tomatoes audience score`, 
+                        `90-Day Rotten Tomatoes critic score`),
   names_to = "Rating Type",
   values_to = "Rating")
 
@@ -228,23 +225,23 @@ theme_minimal() +
 annotate("label",
   x = 20,
   y = 2500000000,
-  label = "Critic r = .21
-Audience r = .12 ",
+  label = "Critic r = .29
+Audience r = .18",
   fill = "white",
   colour = "black",
   label.size = 0,
   size = 4,
   hjust = 0) 
   
-rating_by_revenue_correlation <- cor.test(Top_Movies$`90-Day Rotten Tomatoes critic score`, Top_Movies$`Inflation-Adjusted Box Office`, method = "pearson")
+rating_by_revenue_correlation <- cor.test(COVID_Removed_List$`90-Day Rotten Tomatoes critic score`, COVID_Removed_List$`Inflation-Adjusted Box Office`, method = "pearson")
 
-rating_by_audience_correlation <- cor.test(Top_Movies$`90-Day Rotten Tomatoes audience score`, Top_Movies$`Inflation-Adjusted Box Office`, method = "pearson")
+rating_by_audience_correlation <- cor.test(COVID_Removed_List$`90-Day Rotten Tomatoes audience score`, COVID_Removed_List$`Inflation-Adjusted Box Office`, method = "pearson")
 
 critic_by_audience_correlation <- cor.test(Top_Movies$`90-Day Rotten Tomatoes audience score`, Top_Movies$`90-Day Rotten Tomatoes critic score`, method = "pearson")
 
 ## Accessible --> Patched scatter plots
   
-Graph_2_Accessible_Audience <- ggplot(data = Top_Movies, aes(x = `90-Day Rotten Tomatoes audience score`, y = `Inflation-Adjusted Box Office`)) +
+Graph_2_Accessible_Audience <- ggplot(data = COVID_Removed_List, aes(x = `90-Day Rotten Tomatoes audience score`, y = `Inflation-Adjusted Box Office`)) +
   geom_point_interactive(aes(tooltip = `Movie Title`, data_id = `Movie Title`), na.rm = TRUE, fill = "orangered3", size = 4, position = "jitter", alpha = 0.8, shape = 21, colour = "black", stroke = 0.5) +
   scale_x_continuous(limits = c(18, 100),
       breaks = seq(20, 100, 20)) +
@@ -270,7 +267,7 @@ Graph_2_Accessible_Audience <- Graph_2_Accessible_Audience +
                           na.rm = TRUE,
                           colour = "grey23")
 
-Graph_2_Accessible_Critic <- ggplot(data = Top_Movies, aes(x = `90-Day Rotten Tomatoes critic score`, y = `Inflation-Adjusted Box Office`)) +
+Graph_2_Accessible_Critic <- ggplot(data = COVID_Removed_List, aes(x = `90-Day Rotten Tomatoes critic score`, y = `Inflation-Adjusted Box Office`)) +
   geom_point_interactive(aes(tooltip = `Movie Title`, data_id = `Movie Title`), na.rm = TRUE, fill = "orangered3", size = 4, position = "jitter", alpha = 0.8, shape = 21, colour = "black", stroke = 0.5) +
   scale_x_continuous(limits = c(18, 100),
        breaks = seq(20, 100, 20)) +
@@ -300,17 +297,17 @@ Graph_2_Accessible_Critic <- Graph_2_Accessible_Critic +
 ## Rendering Interactive Plots
 
 Combined_Graph_2 <- Graph_2_Accessible_Audience / Graph_2_Accessible_Critic + 
-  plot_annotation(title = "Better Ratings Don't Guarantee Higher Earnings",
-    subtitle = "Click on the dots to see the movie title!") +
-  theme(plot.title = element_text(size = 30, hjust = 0, colour = "black"),
-    plot.background = element_rect(fill = "lemonchiffon3", colour = NA))
+   plot_annotation((title = "Better Ratings Don't Guarantee Higher Earnings"),
+                  theme = theme(plot.title = element_text(size = 18, hjust = 0, colour = "black"),
+                                plot.background = element_rect(fill = "lemonchiffon3", 
+                                                               colour = NA)))
 
 ### Graph 3: Ratings and Box Office (Y) by Genre (X)
 ## Scientific
 
 Ratings_by_Genre <- Top_Movies |> 
   group_by(Genre) |> 
-  summarise(Audience = mean(`90-Day Rotten Tomatoes audience score`, na.rm = TRUE), Critic = mean(`90-Day Rotten Tomatoes critic score`, na.rm = TRUE), 'Box Office' = mean(`Inflation-Adjusted Box Office`, na.rm = TRUE), count = n()) |> 
+  summarise(Audience = mean(`90-Day Rotten Tomatoes audience score`, na.rm = TRUE), Critic = mean(`90-Day Rotten Tomatoes critic score`, na.rm = TRUE), count = n()) |> 
   filter(count > 5) 
 
 Graph_3_Scientific_Ratings <- ggplot(Ratings_by_Genre) +
@@ -330,7 +327,7 @@ Graph_3_Scientific_Ratings <- ggplot(Ratings_by_Genre) +
     axis.line = element_line(color = "black", linewidth = 0.5),
     axis.text = element_text(size = 10))
 
-Key_Genres <- Top_Movies |> 
+Key_Genres <- COVID_Removed_List |> 
   filter(Genre == "Action" | Genre == "Adventure" | Genre == "Fantasy" | Genre == "Kids & Family" | Genre == "Sci-Fi") 
 
 Graph_3_Scientific_Box_Office <- ggplot(Key_Genres, aes(x = Genre, y = `Inflation-Adjusted Box Office`)) +
@@ -386,7 +383,12 @@ Graph_3_Accessible_Ratings <- ggplot(Year_Ratings_Genre, aes(x = Genre, y = Rati
         legend.background = element_rect(fill = "lemonchiffon3", colour = NA),
         legend.position = "bottom")
 
-Graph_3_Accessible_Box_Office <- ggplot(Ratings_by_Genre, aes(x = Genre, y = `Box Office`)) +
+Ratings_by_Genre_Box_Office <- COVID_Removed_List |> 
+  group_by(Genre) |> 
+  summarise(`Box Office` = mean(`Inflation-Adjusted Box Office`, na.rm = TRUE), count = n()) |> 
+  filter(count > 5) 
+
+Graph_3_Accessible_Box_Office <- ggplot(Ratings_by_Genre_Box_Office, aes(x = Genre, y = `Box Office`)) +
   geom_col(color = "black", fill = "orangered4") +
   scale_y_continuous(labels = label_dollar(scale_cut = cut_short_scale())) +
   theme_minimal() +
@@ -402,53 +404,77 @@ Graph_3_Accessible_Box_Office <- ggplot(Ratings_by_Genre, aes(x = Genre, y = `Bo
 
 Combined_Graph_3 <- Graph_3_Accessible_Ratings / Graph_3_Accessible_Box_Office + 
   plot_annotation((title = "Adventure Movies Tank in Critic Ratings but Score at the Box Office"),
-                  theme = theme(plot.title = element_text(size = 18, face = "bold", hjust = 0, colour = "black"),
+                  theme = theme(plot.title = element_text(size = 18, hjust = 0, colour = "black"),
                                 plot.background = element_rect(fill = "lemonchiffon3", colour = NA)))
 
 
 ```
-
+## Version A: What Makes a Movie Successful? Exploring the Different Definitions and Characteristics of Film Success  
+  The film industry is ever-evolving, adapting to both broader societal changes (e.g., technological advancements, economic strife) and the desires of its audiences with the ultimate aim of maximizing profits. Despite concerns that box office revenues have not recovered since the COVID-19 pandemic, it remains to be seen whether this industry-wide deficit is reflected in the highest-grossing movies of each year. It is also critical to examine the extent to which positive reception from critics and audiences are related to a film's theatrical success, and what other factors may help explain or predict either its box office revenue or ratings.
+  
+### How has blockbuster performance changed over time?
+  After generating the initial data frame (see the Appendix for descriptions of variables and data collection methods), I began by investigating whether the financial performance of the highest-grossing films has declined over the past two decades. Specifically, I examined the inflation-adjusted worldwide box-office revenue for each year's top five earners from 2006 to 2025 by calculating Pearson correlation coefficients and generating a scatterplot with a linear trendline and standard error. This was followed by a similar examination of both critic and audience ratings for each film across this time period.
+  
+#### Figure 1.
 ```{r, Graph_1_Scientific}
-Graph_1_Scientific
-
-Graph_1_Scientific_Rating
+Graph_1_Scientific 
 ```
 
-Notably, audiences consistently offered higher ratings than critics, with a marked absence of low ratings since 2020. Although both critic and audience ratings are related to box office revenue, these ratings aren't very good at explaining box office turnout. Instead, we need to look at a factor that initially draws audiences to the theatre.
+#### Figure 2.
+```{r, Graph_1_Scientific_2}
+Graph_1_Scientific_Rating
+```
+  These data (Figures 1 and 2) suggest a few interesting trends. First, unlike recent figures suggesting that global box office revenue has not yet recovered since the COVID-19 pandemic, the most financially successful films have been consistent in their inflation-adjusted revenue, other than in 2020 and early 2021. Indeed, when excluding time periods in which pandemic restrictions locked down theatres (i.e., 2020 and 2021), the correlation between year and inflation-adjusted box office revenue was only r = .06 (p = .766, CI = -.23, .17). 
+  By contrast, both critic (r = .26, p = .008, CI = .07, .44) and audience (r = .48, p < .001, CI = .32, .62) Rotten Tomatoes ratings posted within the first 90 days after a film's theatrical release appeared to increase dramatically over the past two decades. Notably, audiences consistently offered higher ratings than critics, with a marked absence of low ratings since 2020. 
+ 
+### Are Ratings Related to Revenue?
+  Next, I sought to understand the extent to which both audience and critic ratings were related to box office revenue. The resulting visualization is presented below in Figure 2.
 
+#### Figure 3.
 ```{r, Graph_2_Scientific}
 Graph_2_Scientific
 ```
+  Interestingly, critics' ratings (r = .29, p = .006, CI = .08, .46) appeared more strongly correlated with box office revenue than audience ratings (r = .18, p = .097, CI = -.03, .37), perhaps indicating that critics' ratings were more likely to incentivize movie theatre attendance. These findings further suggest that a movie may be financially successful, critically acclaimed, an audience favourite, or any combination of the three. That is to say, it appears that what qualifies as a successful movie depends on one's definition of success.
+  
+### Can Genre Explain Ratings and Revenue?
+  Although both critic and audience ratings were associated with box office revenue, these ratings were ultimately not strong predictors of box office turnout. Instead, we should examine a factor that initially draws audiences to the movie theatre: Genre. Specifically, I examined the varying ratings and revenues across genres with at least five cases, excluding all others (i.e., Biography, Comedy, Musical, Mystery & Thriller, Romance).
 
-Although Sci-Fi movies achieved the highest average ratings and box office revenue, films that primarily fell under the genre of "Adventure" were simultaneously less likely to receive higher ratings from both critics and audiences (with larger discrepancies), yet no less successful at the box office. Ultimately, it's clear that what defines a "successful" film has more to do with one's definition of success (i.e., ratings, revenue, etc.) than any single characteristic of a film.
-
-Too few movies in the categories of:
-
+#### Figure 4.
 ```{r, Scientific_Genre}
 Graph_3_Scientific_Ratings / Graph_3_Scientific_Box_Office +
   plot_annotation((title = str_wrap("Genre Differentially Influences Ratings and Box Office Revenue")),
   theme = theme(plot.title = element_text(size = 16, hjust = 0, colour = "black")))
 ```
 
-Importantly, revenue figures do not consider the roles of budgets or profits, which may be better indicators of "success". They also do not reflect the reality that some of these films would be distributed to a narrower selection of theatres or countries. Additionally, despite the fact that films based on well-known intellectual property (e.g., sequels) did not differ in their box office revenues or Rotten Tomatoes critic and audience ratings, only 13 of the 100 films in the current sample did not fall under this category. This may suggest that (1) the film industry disproportionately relies on established intellectual property because of greater perceived confidence in its resulting success and/or (2) the sample of 13 non-legacy films presented here are an atypically successful subset compared to movies based on established IP.
+  Although Sci-Fi movies achieved the highest average ratings and box office revenue of all genres reported, films that primarily fell under the category of "Adventure" simultaneously demonstrated higher ratings from both critics and audiences (and with larger discrepancies), yet were no less successful at the box office. Although no inferential statistics were calculated here, it seems that what defines a "successful" film may be fundamentally tied to one's chosen metric of success (i.e., ratings, revenue, etc.).
 
-To best tease apart the factors contributing to various reflections of success, comparisons between the highest-earning movies of each year should also be made with the larger pool of films playing in theatres.
+### Limitations & Conclusion  
+  Importantly, revenue figures do not consider the roles of budgets or profits, which may be better indicators of "success". They also do not reflect the reality that some of these films would be distributed to a narrower selection of theatres or countries. Additionally, despite the fact that films based on well-known intellectual property (e.g., sequels) did not differ in their box office revenues or Rotten Tomatoes critic and audience ratings, only 13 of the 100 films in the current sample did not fall under this category. This may suggest that (1) the film industry disproportionately relies on established intellectual property because of greater perceived confidence in its resulting success and/or (2) the sample of 13 non-legacy films presented here are an atypically successful subset compared to movies based on established IP. To best tease apart the factors contributing to various reflections of success, comparisons between the highest-earning movies of each year should also be made with the larger pool of films playing in theatres.
+  Overall, these results indicate that the highest earning films are not necessarily characterized by the same trends as the broader pool of films distributed to movie theatres. Critic and audience ratings were also implicated, demonstrating notable discrepancies, steady increases over time, and intriguing ties to both box office revenue and film genre. Perhaps most importantly, it was apparent — at least for the highest earning films — that a film's reported success in one domain is not synonymous with its success in another, suggesting a need for greater discernment when characterizing the quality of a film.
 
-## Version B: Accessible/Dynamic
+## Version B: A Box Office Hit, a Critical Darling, or a Crowd-Pleaser?
+Every year, a handful of films rise above the competition to become box-office hits. But have the biggest movies changed over time? And what does it actually take for a film to succeed?
 
-“A Box Office Hit, a Critical Darling, or a Crowd-Pleaser?”
+Let's start with the money.
 
+### The biggest movies are still bringing in big money!
 ```{r, accessible1}
-
 animate(animated_plot_Graph_1_Box_Office, renderer = gifski_renderer())
+```
 
+Despite reports that theatre attendance has struggled to recover since the pandemic, the inflation-adjusted worldwide box office revenue of the five biggest films each year have been relatively consistent in recent years. At least among the top five earners of each year, the box office tells a different story from broader concerns about movie-going.
+
+But there's another question worth asking: Are these films winning over both critics and audiences?
+
+### Critics and Audiences Don't Always See Eye-to-Eye
+```{r, accessible2}
 animate(animated_plot_Graph_1_Ratings, renderer = gifski_renderer())
 ```
 
-Although both critic and audience ratings are related to box office revenue, these ratings aren't very good at explaining box office turnout. Instead, we need to look at a factor that puts butts into seats in the first place: Genre
+Surprisingly, both critic and audience ratings increased steadily across the period examined, and audiences generally gave films higher scores than critics. The difference was especially noticeable in recent years. But does earning a higher rating translate into earning more money?
 
-Interactive Audience Plot
-
+### Does a Box Office Hit Need to be Highly Rated?
+The interactive plot below lets you explore the relationship between ratings and revenue. Hover over individual points to identify the films and see how they compare between critics and audiences!
 ```{r, interactive_audience_plot}
 girafe(ggobj = Combined_Graph_2,
   width_svg = 12, height_svg = 12,
@@ -457,9 +483,12 @@ girafe(ggobj = Combined_Graph_2,
 
 ```
 
-Although Sci-Fi movies achieved the highest average ratings and box office revenue, films that primarily fell under the genre of "Adventure" were simultaneously less likely to receive higher ratings from both critics and audiences (with larger discrepancies), yet no less successful at the box office. Ultimately, it's clear that what defines a "successful" film has more to do with one's definition of success (i.e., ratings, revenue, etc.) than any single characteristic of a film.
+As it turns out, films with higher critic and audience ratings tended to earn somewhat more, but the relationships were weak. A strong rating does not necessarily mean bigger earnings, and a film can be a box office hit without having particularly high ratings
 
-Too few movies in the categories of:
+So, if ratings alone don't tell us which films will earn the most, what else might matter? One possibility is genre.
+
+### There's More than One Way to Be a Hit
+Explore the figures below to compare genres and individual films!
 ```{r, Focus on Genre}
 girafe(ggobj = Combined_Graph_3,
        width_svg = 10, height_svg = 12,
@@ -467,6 +496,15 @@ girafe(ggobj = Combined_Graph_3,
                       opts_tooltip(css = "background-color:white;color:black;padding:5px;border-radius:3px;")))
 ```
 
-Importantly, revenue figures do not consider the roles of budgets or profits, which may be better indicators of "success". They also do not reflect the reality that some of these films would be distributed to a narrower selection of theatres or countries. Additionally, despite the fact that films based on well-known intellectual property (e.g., sequels) did not differ in their box office revenues or Rotten Tomatoes critic and audience ratings (not depicted here), only 13 of the 100 films in the current sample did not fall under this category. This may suggest that (1) the film industry disproportionately relies on established intellectual property because of greater perceived confidence in its resulting success and/or (2) the sample of 13 non-legacy films presented here are an atypically successful subset compared to movies based on established IP.
+Although Sci-Fi movies achieved both the highest average ratings and box office revenue, "Adventure" films had lower ratings from both critics and audiences but earned similar amounts at the box office, compared to other genres. Critics were also more critical (pun intended) than audiences for this genre of film, although it's worth noting that only six movies over the 20 years studied were part of this category. 
 
-To best tease apart the factors contributing to various reflections of success, appropriate statistical comparisons between the highest-earning movies of each year should also be made with the larger pool of films playing in theatres.
+### So, what makes a movie successful?
+Ultimately, it seems that what makes a film "successful" has more to do with one's definition of success (i.e., ratings, revenue, etc.) than any one characteristic. There were many movies with very high ratings among both critics and audiences (e.g., cult classics) that were not included here because they bombed at the box office. Even though it would be nice to be able to predict a movie's overall success before buying tickets and driving to the movie theatre, it's clear that we need to take a step back and decide whether we care most about box office numbers, other people's opinions, or our own preferences when deciding whether to watch a movie.
+
+
+
+## Appendix
+To create my dataset, worldwide box office revenues were identified through Box Office Mojo (<https://www.boxofficemojo.com/year/world/>) and adjusted for inflation. I then used the Wayback Machine (<https://web.archive.org/>) to identify the Rotten Tomatoes critic and audience scores within the first 90 days of each movie's initial theatrical release, using the first-named genre to categorize each film. Importantly, Rotten Tomatoes ratings are not necessarily reflective of broader populations of critics or audiences, but offer a useful resource with which to compare the two distinct groups. Finally, although not included in the above visualizations, I also noted whether each of the movies were based on existing, well-known intellectual property.
+
+See the limitations and conclusion section of Version A for limitations on the data used for this project. Although the large dollar- and percentage-based data were transformed as presented in the reproducible code, it's worth noting that future users of the original dataset/xlsx should consider the potential transformations necessary to present these variables in meaningful and interpretable ways, depending on their analysis/visualization. Otherwise, the variables and their data should be relatively straightforward to utilize.
+

@@ -15,6 +15,9 @@ library(ggiraph)
 library(ggExtra)
 library(plotly)
 
+
+Data_Viz_Assignment_Dataset <- read_xlsx("Data Viz Assignment Dataset.xlsx")
+
 Top_Movies <- Data_Viz_Assignment_Dataset |> 
   select(Year:Genre) |> 
   filter(Year != "NA") |> 
@@ -23,8 +26,7 @@ Top_Movies <- Data_Viz_Assignment_Dataset |>
   mutate(`90-Day Rotten Tomatoes audience score` = `90-Day Rotten Tomatoes audience score`*100)
 
 COVID_Removed_List <- Top_Movies |> 
-  filter(Year != "2020", Year != "2021")
-
+  filter(!Year %in% c(2020, 2021))
 
 ## Graph 1: Revenue (Y) by Year (X)
   ## Scientific --> Scatter plot
@@ -54,7 +56,7 @@ Year_Ratings <- Top_Movies |>
                names_to = "Rating Type",
                values_to = "Rating")
 
-Graph_1_Scientific_Rating <- ggplot(data = Ratings_Revenue, aes(x = Year, y = Rating, colour = `Rating Type`)) +
+Graph_1_Scientific_Rating <- ggplot(data = Year_Ratings, aes(x = Year, y = Rating, colour = `Rating Type`)) +
   geom_point(na.rm = TRUE) +
   geom_smooth(method = "lm",
               se = FALSE,
@@ -187,7 +189,7 @@ animate(animated_plot,
 
 ## Graph 2: Revenue (Y) by Critic and Audience Ratings (X) --> Although both critic and audience ratings are related to box office revenue, these ratings aren't very good at explaining box office turnout. Instead, we need to look at the factors that put butts into seats in the first place.
   ## Scientific --> Scatter plot disaggregated by rating type
-Ratings_Revenue <- Top_Movies |>
+Ratings_Revenue <- COVID_Removed_List |>
 pivot_longer(cols = c(`90-Day Rotten Tomatoes audience score`, `90-Day Rotten Tomatoes critic score`),
   names_to = "Rating Type",
   values_to = "Rating")
@@ -216,24 +218,22 @@ theme_minimal() +
 annotate("label",
   x = 20,
   y = 2500000000,
-  label = "Critic r = .21
-Audience r = .12 ",
+  label = "Critic r = .29
+Audience r = .18 ",
   fill = "white",
   colour = "black",
   label.size = 0,
   size = 4,
   hjust = 0) 
-
-ggMarginal(Graph_2_Scientific)
   
-rating_by_revenue_correlation <- cor.test(Top_Movies$`90-Day Rotten Tomatoes critic score`, Top_Movies$`Inflation-Adjusted Box Office`, method = "pearson")
+rating_by_revenue_correlation <- cor.test(COVID_Removed_List$`90-Day Rotten Tomatoes critic score`, COVID_Removed_List$`Inflation-Adjusted Box Office`, method = "pearson")
 
-rating_by_audience_correlation <- cor.test(Top_Movies$`90-Day Rotten Tomatoes audience score`, Top_Movies$`Inflation-Adjusted Box Office`, method = "pearson")
+rating_by_audience_correlation <- cor.test(COVID_Removed_List$`90-Day Rotten Tomatoes audience score`, COVID_Removed_List$`Inflation-Adjusted Box Office`, method = "pearson")
 
 critic_by_audience_correlation <- cor.test(Top_Movies$`90-Day Rotten Tomatoes audience score`, Top_Movies$`90-Day Rotten Tomatoes critic score`, method = "pearson")
 
 ## Accessible --> Patched scatter plots
-Graph_2_Accessible_Audience <- ggplot(data = Top_Movies, aes(x = `90-Day Rotten Tomatoes audience score`, y = `Inflation-Adjusted Box Office`)) +
+Graph_2_Accessible_Audience <- ggplot(data = COVID_Removed_List, aes(x = `90-Day Rotten Tomatoes audience score`, y = `Inflation-Adjusted Box Office`)) +
   geom_point_interactive(aes(tooltip = `Movie Title`, data_id = `Movie Title`), na.rm = TRUE, colour = "orangered3", size = 3) +
   scale_x_continuous(limits = c(18, 100),
       breaks = seq(20, 100, 20)) +
@@ -258,7 +258,7 @@ Graph_2_Accessible_Audience <- Graph_2_Accessible_Audience +
                           na.rm = TRUE,
                           colour = "orangered4")
 
-Graph_2_Accessible_Critic <- ggplot(data = Top_Movies, aes(x = `90-Day Rotten Tomatoes critic score`, y = `Inflation-Adjusted Box Office`)) +
+Graph_2_Accessible_Critic <- ggplot(data = COVID_Removed_List, aes(x = `90-Day Rotten Tomatoes critic score`, y = `Inflation-Adjusted Box Office`)) +
   geom_point_interactive(aes(tooltip = `Movie Title`, data_id = `Movie Title`), na.rm = TRUE, colour = "orangered3", size = 3) +
   scale_x_continuous(limits = c(18, 100),
        breaks = seq(20, 100, 20)) +
@@ -320,7 +320,7 @@ Graph_3_Scientific_Ratings <- ggplot(Ratings_by_Genre) +
     axis.line = element_line(color = "black", linewidth = 0.5),
     axis.text = element_text(size = 10))
 
-Key_Genres <- Top_Movies |> 
+Key_Genres <- COVID_Removed_List |> 
   filter(Genre == "Action" | Genre == "Adventure" | Genre == "Fantasy" | Genre == "Kids & Family" | Genre == "Sci-Fi") 
 
 Graph_3_Scientific_Box_Office <- ggplot(Key_Genres, aes(x = Genre, y = `Inflation-Adjusted Box Office`)) +
